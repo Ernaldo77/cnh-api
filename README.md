@@ -16,7 +16,7 @@ python -m venv venv
 ### Entre no Ambiente.
 Windows:
 ```bash
-venv/Scripts/activate
+venv\Scripts\activate
 ```
 Linux:
 ```bash

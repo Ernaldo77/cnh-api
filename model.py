@@ -1,28 +1,30 @@
-class Carteira:
-    _id_counter = 1
+from dataclasses import dataclass
+from database import get_connection
 
-    def __init__(self, nome, primeira_habilitacao, data_nasc, local_nasc, UF_nasc, data_emissao, validade, restricoes, doc_identidade, org_emissor, UF_emissor, CPF, n_registro, categoria, nacionalidade, filiacao, observacoes, local):
-        self.id = Carteira._id_counter
-        self.nome = nome
-        self.primeira_habilitacao = primeira_habilitacao
-        self.data_nasc = data_nasc
-        self.local_nasc = local_nasc
-        self.UF_nasc = UF_nasc
-        self.data_emissao = data_emissao
-        self.validade = validade
-        self.restricoes = restricoes
-        self.doc_identidade = doc_identidade
-        self.org_emissor = org_emissor
-        self.UF_emissor = UF_emissor
-        self.CPF = CPF
-        self.n_registro = n_registro
-        self.categoria = categoria
-        self.nacionalidade = nacionalidade
-        self.filiacao = filiacao
-        self.observacoes = observacoes
-        self.local = local
-        Carteira._id_counter += 1
-    
+
+@dataclass
+class Carteira:
+    id: int
+    nome: str
+    primeira_habilitacao: str
+    data_nasc: str
+    local_nasc: str
+    UF_nasc: str
+    data_emissao: str
+    validade: str
+    restricoes: str
+    doc_identidade: str
+    org_emissor: str
+    UF_emissor: str
+    CPF: str
+    n_registro: str
+    categoria: str
+    nacionalidade: str
+    filiacao: str
+    observacoes: str
+    local: str
+
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -43,74 +45,91 @@ class Carteira:
             "nacionalidade": self.nacionalidade,
             "filiacao": self.filiacao,
             "observacoes": self.observacoes,
-            "local": self.local
+            "local": self.local,
         }
 
-carteiras = []
+
+def carteira_from_row(row):
+    return Carteira(
+        id=row["id"],
+        nome=row["nome"],
+        primeira_habilitacao=row["primeira_habilitacao"],
+        data_nasc=row["data_nasc"],
+        local_nasc=row["local_nasc"],
+        UF_nasc=row["UF_nasc"],
+        data_emissao=row["data_emissao"],
+        validade=row["validade"],
+        restricoes=row["restricoes"],
+        doc_identidade=row["doc_identidade"],
+        org_emissor=row["org_emissor"],
+        UF_emissor=row["UF_emissor"],
+        CPF=row["CPF"],
+        n_registro=row["n_registro"],
+        categoria=row["categoria"],
+        nacionalidade=row["nacionalidade"],
+        filiacao=row["filiacao"],
+        observacoes=row["observacoes"],
+        local=row["local"],
+    )
 
 
-def listar():
-    if carteiras == []:
-        return "Nenhuma carteira registrada"
-    return [carteira.to_dict() for carteira in carteiras]
-
-def adicionar(carteira: Carteira):
-    carteiras.append(carteira)
-    return carteira.to_dict()
+def listar_carteiras():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM carteiras")
+    rows = cur.fetchall()
+    conn.close()
+    return [carteira_from_row(r) for r in rows]
 
 def buscar_por_id(carteira_id):
-    for carteira in carteiras:
-        if carteira.id == carteira_id:
-            return carteira
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM carteiras WHERE id = ?", (carteira_id,))
+    row = cur.fetchone()
+    conn.close()
+    if row:
+        return carteira_from_row(row)
     return None
 
-def atualizar(carteira_id,novo_CPF=None, novo_nome=None, nova_primeira_habilitacao=None, nova_data_nasc=None, novo_local_nasc=None, nova_UF_nasc=None, nova_data_emissao=None, nova_validade=None, nova_restrioes=None, novo_doc_identidade=None, novo_org_emissor=None, nova_UF_emissor=None, novo_n_registro=None, nova_categoria=None, nova_nacionalidade=None, nova_filiacao=None, novas_observacoes=None, novo_local=None):
-    carteira = buscar_por_id(carteira_id)
-    if carteira:
-        if novo_CPF:
-            carteira.CPF = novo_CPF
-        if novo_nome:
-            carteira.nome = novo_nome
-        if nova_primeira_habilitacao:
-            carteira.primeira_habilitacao = nova_primeira_habilitacao
-        if nova_data_nasc:
-            carteira.data_nasc = nova_data_nasc
-        if novo_local_nasc:
-            carteira.local_nasc = novo_local_nasc
-        if nova_UF_nasc:
-            carteira.UF_nasc = nova_UF_nasc
-        if nova_data_emissao:
-            carteira.data_emissao = nova_data_emissao
-        if nova_validade:
-            carteira.validade = nova_validade
-        if nova_restrioes:
-            carteira.restricoes = nova_restrioes
-        if novo_doc_identidade:
-            carteira.doc_identidade = novo_doc_identidade
-        if novo_org_emissor:
-            carteira.org_emissor = novo_org_emissor
-        if nova_UF_emissor:
-            carteira.UF_emissor = nova_UF_emissor
-        if novo_n_registro:
-            carteira.n_registro = novo_n_registro
-        if nova_categoria:
-            carteira.categoria = nova_categoria
-        if nova_nacionalidade:
-            carteira.nacionalidade = nova_nacionalidade
-        if nova_filiacao:
-            carteira.filiacao = nova_filiacao
-        if novas_observacoes:
-            carteira.observacoes = novas_observacoes
-        if novo_local:
-            carteira.local = novo_local
-        return carteira.to_dict()
-    return None
 
-def deletar(carteira_id):
-    carteira = buscar_por_id(carteira_id)
-    if carteira:
-        carteiras.remove(carteira)
-        return carteira.to_dict()
-    return None
+def adicionar_carteira(nome, primeira_habilitacao, data_nasc, local_nasc, UF_nasc, data_emissao, validade, restricoes, doc_identidade, org_emissor, UF_emissor, CPF, n_registro, categoria, nacionalidade, filiacao, observacoes, local):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        INSERT INTO carteiras (nome, primeira_habilitacao, data_nasc, local_nasc, UF_nasc, data_emissao, validade, restricoes, doc_identidade, org_emissor, UF_emissor, CPF, n_registro, categoria, nacionalidade, filiacao, observacoes, local)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (nome, primeira_habilitacao, data_nasc, local_nasc, UF_nasc, data_emissao, validade, restricoes, doc_identidade, org_emissor, UF_emissor, CPF, n_registro, categoria, nacionalidade, filiacao, observacoes, local)
+    )
+    conn.commit()
+    id = cur.lastrowid
+    conn.close()
+    return buscar_por_id(id)
 
+
+def atualizar_carteira(carteira):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        UPDATE carteiras
+            SET nome = ?, primeira_habilitacao = ?, data_nasc = ?, local_nasc = ?, UF_nasc = ?, data_emissao = ?, validade = ?, restricoes = ?, doc_identidade = ?, org_emissor = ?, UF_emissor = ?, CPF = ?, n_registro = ?, categoria = ?, nacionalidade = ?, filiacao = ?, observacoes = ?, local = ?
+        WHERE id = ?
+        """,
+        (carteira.nome, carteira.primeira_habilitacao, carteira.data_nasc, carteira.local_nasc, carteira.UF_nasc, carteira.data_emissao, carteira.validade, carteira.restricoes, carteira.doc_identidade, carteira.org_emissor, carteira.UF_emissor, carteira.CPF, carteira.n_registro, carteira.categoria, carteira.nacionalidade, carteira.filiacao, carteira.observacoes, carteira.local, carteira.id)
+    )
+    conn.commit()
+    conn.close()
+    return carteira
+
+
+def deletar_carteira(carteira_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM carteiras WHERE id = ?", (carteira_id,))
+    conn.commit()
+    deletou = cur.rowcount > 0
+    conn.close()
+    return deletou
  
